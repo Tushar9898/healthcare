@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Doctor Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+        .upload-box { border: 2px dashed #ccc; padding: 20px; margin: 10px 0; text-align: center; }
+        button { background: #007bff; color: white; padding: 15px 30px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .result { margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 5px; }
+        .error { background: #f8d7da; color: #721c24; }
+        .success { background: #d4edda; color: #155724; }
+        .loading { text-align: center; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <h1>🩺 AI Doctor Test Interface</h1>
+    
+    <div class="upload-box">
+        <h3>Upload Audio File</h3>
+        <input type="file" id="audioFile" accept=".mp3,.wav,.m4a" />
+        <div id="audioName"></div>
+    </div>
+    
+    <div class="upload-box">
+        <h3>Upload Image File</h3>
+        <input type="file" id="imageFile" accept=".jpg,.jpeg,.png" />
+        <div id="imageName"></div>
+    </div>
+    
+    <div>
+        <h3>Voice Quality</h3>
+        <label><input type="radio" name="tts" value="elevenlabs" checked> ElevenLabs (Premium)</label><br>
+        <label><input type="radio" name="tts" value="gtts"> Google TTS (Free)</label>
+    </div>
+    
+    <button onclick="diagnose()" id="diagnoseBtn">🔬 Start Diagnosis</button>
+    
+    <div id="loading" class="loading" style="display:none;">
+        <p>🔄 AI Doctor is analyzing... Please wait...</p>
+    </div>
+    
+    <div id="results" style="display:none;">
+        <h3>📋 Results</h3>
+        <div class="result">
+            <h4>Patient said:</h4>
+            <p id="transcription"></p>
+        </div>
+        <div class="result">
+            <h4>Doctor's diagnosis:</h4>
+            <p id="diagnosis"></p>
+        </div>
+        <div class="result">
+            <h4>Doctor's voice:</h4>
+            <audio id="audioResponse" controls style="width: 100%;"></audio>
+        </div>
+    </div>
+    
+    <div id="error" class="result error" style="display:none;"></div>
+
+    <script>
+        document.getElementById('audioFile').addEventListener('change', function(e) {
+            document.getElementById('audioName').textContent = e.target.files[0] ? `Selected: ${e.target.files[0].name}` : '';
+        });
+        
+        document.getElementById('imageFile').addEventListener('change', function(e) {
+            document.getElementById('imageName').textContent = e.target.files[0] ? `Selected: ${e.target.files[0].name}` : '';
+        });
+        
+        async function diagnose() {
+            const audioFile = document.getElementById('audioFile').files[0];
+            const imageFile = document.getElementById('imageFile').files[0];
+            const ttsProvider = document.querySelector('input[name="tts"]:checked').value;
+            
+            if (!audioFile || !imageFile) {
+                showError('Please select both audio and image files!');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('audio_file', audioFile);
+            formData.append('image_file', imageFile);
+            formData.append('tts_provider', ttsProvider);
+            
+            showLoading(true);
+            hideError();
+            hideResults();
+            
+            try {
+                const response = await fetch('http://localhost:8000/complete-diagnosis', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    showResults(result);
+                } else {
+                    showError(result.detail || 'Diagnosis failed');
+                }
+            } catch (error) {
+                showError(`Error: ${error.message}. Make sure your backend is running!`);
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+            document.getElementById('diagnoseBtn').disabled = show;
+        }
+        
+        function showResults(result) {
+            document.getElementById('transcription').textContent = result.transcription;
+            document.getElementById('diagnosis').textContent = result.doctor_response;
+            document.getElementById('audioResponse').src = `http://localhost:8000${result.audio_file_path}`;
+            document.getElementById('results').style.display = 'block';
+        }
+        
+        function hideResults() {
+            document.getElementById('results').style.display = 'none';
+        }
+        
+        function showError(message) {
+            document.getElementById('error').textContent = message;
+            document.getElementById('error').style.display = 'block';
+        }
+        
+        function hideError() {
+            document.getElementById('error').style.display = 'none';
+        }
+        
+        // Check backend on load
+        window.addEventListener('load', async function() {
+            try {
+                const response = await fetch('http://localhost:8000/health');
+                if (response.ok) {
+                    console.log('✅ Backend is running!');
+                } else {
+                    showError('❌ Backend not responding. Please start it with: python main.py');
+                }
+            } catch (error) {
+                showError('❌ Backend not running. Please start it with: python main.py');
+            }
+        });
+    </script>
+</body>
+</html>
