@@ -51,7 +51,7 @@ app.add_middleware(
 # Environment variables
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 
-ELEVENLABS_API_KEY = os.environ.get("ELEVEN_API_KEY")
+ELEVENLABS_API_KEY = os.environ.get("ELEVENLABS_API_KEY")
 
 # Validate API keys
 if not GROQ_API_KEY:

@@ -135,7 +135,7 @@
         // Check backend on load
         window.addEventListener('load', async function() {
             try {
-                const response = await fetch('http://localhost:8000/health');
+                const response = await fetch('http://127.0.0.1:8000/');
                 if (response.ok) {
                     console.log('✅ Backend is running!');
                 } else {
