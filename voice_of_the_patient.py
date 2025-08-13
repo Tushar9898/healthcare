@@ -49,7 +49,8 @@ audio_filepath="patient_voice_test_for_patient.mp3"
 import os
 from groq import Groq
 
-GROQ_API_KEY=os.getenv("GROQ_API_KEY")
+# GROQ_API_KEY=os.getenv("GROQ_API_KEY")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 stt_model="whisper-large-v3"
 
 def transcribe_with_groq(stt_model, audio_filepath, GROQ_API_KEY):
